@@ -1,10 +1,14 @@
 import streamlit as st
+import numpy as np
 import pandas as pd
 import plotly.express as px 
 import plotly.graph_objects as go
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.ensemble import RandomForestRegressor
 
 def load_data():
-    data = pd.read_csv('cleaned.csv')    
+    data = pd.read_csv('engineered.csv')    
     return data
 
 months = {"January":1, "February":2, "March":3, "April":4, "May":5, "June":6, "July":7, "August":8, "September":9, "October":10, "November":11, "December":12}
@@ -20,6 +24,7 @@ st.title('Pakistan Housing Data Analysis 🏠')
 st.write("Delve into the Pakistan Real Estate Market Trends with data-driven analysis")
 
 st.sidebar.header("Explore Analysis")
+
 options = [
     "Overview",
     "Listings by Month",
@@ -29,8 +34,10 @@ options = [
     "Price by Purpose",
     "Price by City",
     "Hot Locations",
-    "Price Trend Over Time"
+    "Price Trend Over Time",
+    "Predict House Price"
 ]
+
 selected_option = st.sidebar.radio("Choose an analysis:", options)
 
 data = load_data()
@@ -40,6 +47,14 @@ location_counts = sale['location'].value_counts()
 locations_to_keep = location_counts[location_counts > 1].index
 sale = sale[sale['location'].isin(locations_to_keep)]
 
+def format_lakh_crore(value):
+    if value >= 1e7:
+        return f"PKR {value / 1e7:.2f} Crore"
+    elif value >= 1e5:
+        return f"PKR {value / 1e5:.2f} Lakh"
+    else:
+        return f"PKR {value:.0f}"
+    
 if selected_option == "Overview":
     st.header = "Overview: "
     a, b = st.columns(2)
@@ -243,3 +258,48 @@ elif selected_option == "Price Trend Over Time":
         )
     )
     st.plotly_chart(fig)
+
+elif selected_option == "Predict House Price":
+    purpose = st.selectbox("Choose Purpose: ", options=['For Sale', 'For Rent'])
+    if purpose == "For Rent":
+        city = st.selectbox("Choose City: ", options=["Karachi", "Islamabad", "Rawalpindi", "Faisalabad"])
+    else:
+        city = st.selectbox("Choose City: ", options=["Karachi", "Lahore", "Islamabad", "Rawalpindi", "Faisalabad"])
+    bedrooms = st.selectbox("Choose Number of Bedrooms: ", options=[i for i in range (1, 11)])
+    baths = st.selectbox("Choose Number of Bathrooms: ", options=[i for i in range (1, 7)])
+
+    filtered_data = data.loc[(data['property_type'] == 'House') & (data['purpose']==purpose), ['price', 'purpose', 'property_type', 'bedrooms', 'baths', 'city']]
+
+    le_property_type = LabelEncoder()
+    filtered_data['property_type'] = le_property_type.fit_transform(filtered_data['property_type'])
+
+    le_purpose = LabelEncoder()
+    filtered_data['purpose'] = le_purpose.fit_transform(filtered_data['purpose'])
+
+    le_city = LabelEncoder()
+    filtered_data['city'] = le_city.fit_transform(filtered_data['city'])
+
+    X = filtered_data.drop('price', axis=1)
+    y = filtered_data['price']
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    model = RandomForestRegressor(n_estimators=500, random_state=42)
+    model.fit(X_train, y_train)
+
+    property_type_encoded = le_property_type.transform(["House"])[0]
+    purpose_encoded = le_purpose.transform([purpose])[0]
+    city_encoded = le_city.transform([city])[0]
+    x = np.array([[property_type_encoded, purpose_encoded, bedrooms, baths, city_encoded]])
+    pred = model.predict(x)
+
+    c, d = st.columns(2)
+
+    if purpose == "For Rent":
+        rent_per_month = pred / 12
+        c.metric("Prediction 📋", format_lakh_crore(rent_per_month[0]) + " per Month", delta=None, border=True)
+    else:
+        c.metric("Prediction 📋", format_lakh_crore(pred[0]), delta=None, border=True)
