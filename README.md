@@ -17,7 +17,7 @@ The dataset for this project was fetched from Kaggle. The data itself was web-sc
 - Matplotlib, Seaborn & Plotly for Data Visualization 📊
 - Sci-Kit Learn for Machine Learning 🤖
 - Streamlit for an interactive Website 🌐
-- 
+
 ## How to Run
 1. Install the required libraries using `pip install -r requirements.txt`.
 2. Open the Jupyter Notebook using `jupyter notebook pakistan-housing-data-analysis.ipynb` and explore the code for analysis.
