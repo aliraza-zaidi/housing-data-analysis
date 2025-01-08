@@ -5,7 +5,7 @@ Welcome to this repository! This project provides an in-depth analysis of housin
 ## Data Description
 The dataset for this project was fetched from Kaggle. The data itself was web-scrapped from Zameen.com and includes over 200,000 unique records setting the ground for an elaborate analysis. [Access it here](https://www.kaggle.com/datasets/ebrahimhaquebhatti/pakistan-house-price-prediction)
 
-## Main Steps in the Notebook and App
+## Project Details
 - Data Cleaning: Missing values were handled, and outliers were removed.
 - Exploratory Data Analysis (EDA): Visualizations and summary statistics were generated.
 - Data Preprocessing: Features were encoded and standardized for modeling.
